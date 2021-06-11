@@ -19,6 +19,7 @@ const int MAXFUN = 3;
 #define HASHL (-inf+5)
 #define ERRORX (-inf+6)
 
+
 using namespace std;
 
 static char MathFun[][4]={"sin","cos","tan"};

@@ -2,6 +2,14 @@
 // Created by csh on 2021/6/4.
 //
 
+/*
+ * Var x = 4
+ * Var y = x + 4
+ * Func f(z) = z + 1 + z / 2
+ * Func g(a, b) = x / a + y / b
+ * g(f(1),f(2))/f(1)
+ */
+
 #include "Calculator.h"
 #include <iostream>
 #include <regex>
@@ -13,10 +21,23 @@ const regex ASSIGNVAL("([a-zA-Z]+)\\s*=\\s*(.*?)");
 const regex CREATEFUNC("Func\\s+(.*?)\\((.*?)\\)\\s*=\\s*(.*?)");
 const regex DIGIT("[0-9|.]+");
 
+bool Calculator::check(string line) {
+    if(count(line.begin(), line.end(), '(') != count(line.begin(), line.end(), ')')) {
+        cout<<"括号数量不匹配\n";
+        return false;
+    }
+
+
+
+    return true;
+}
+
 void Calculator::doSth() {
     cout<<"ExpCal > ";
     string line;
     getline(cin, line);
+    if(!check(line))
+        return;
     switch (analyseLine(line)) {
         case CREATE_VARIABLE:
             create_variable(line);
@@ -29,6 +50,9 @@ void Calculator::doSth() {
             break;
         case SHOW_VALUE:
             show_value(line);
+            break;
+        default:
+            cout<<"未知表达式\n";
             break;
     }
 }
@@ -100,8 +124,13 @@ void Calculator::show_value(string &line) {
             cout<<"There is no variable called " << token[0] << endl;
             return;
         }
-        else
-            cout<<tem->eval()<<endl;
+        else {
+            string ans = tem->eval();
+            if(ans.empty())
+                cout<<"表达式有误\n";
+            else
+                cout<<ans<<endl;
+        }
         return;
     }
     for(int i = 0; i < token.size(); i ++) {
@@ -115,6 +144,10 @@ void Calculator::show_value(string &line) {
                 }
             if(var) {
                 string varVal = var->eval();
+                if(varVal.empty()) {
+                    cout<<"表达式有误\n";
+                    return;
+                }
                 int pos = target.find(var->getVarName());
                 target.replace(pos, var->getVarName().length(), varVal);
                 continue;
@@ -133,6 +166,10 @@ void Calculator::show_value(string &line) {
                 }
                 i += f->arguments_size;
                 string func_val = f->eval();
+                if(func_val.empty()) {
+                    cout<<"表达式有误\n";
+                    return;
+                }
                 sub.pop_back();
                 sub += ")";
                 int pos = target.find(sub);
@@ -143,7 +180,10 @@ void Calculator::show_value(string &line) {
     }
     Calc c;
     c.setExp(const_cast<char *>((target + "=").c_str()));
-    c.Cac();
+    if(!c.Cac()) {
+        cout<<"表达式错误\n";
+        return;
+    }
     cout<<c.getAns()<<endl;
 }
 

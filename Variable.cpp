@@ -33,7 +33,8 @@ string Variable::eval() {
     Calc c;
     if(isConst) {
         c.setExp(const_cast<char *>((val + "=").c_str()));
-        c.Cac();
+        if(!c.Cac())
+            return "";
         return to_string(c.getAns());
     }
     string temp = val;
@@ -84,7 +85,8 @@ string Variable::eval() {
         }
     }
     c.setExp(const_cast<char *>((target + "=").c_str()));
-    c.Cac();
+    if(!c.Cac())
+        return "";
     return to_string(c.getAns());
 }
 

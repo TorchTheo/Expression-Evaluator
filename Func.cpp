@@ -159,7 +159,8 @@ string Func::eval() {
         arguments[i] = "";
     Calc c;
     c.setExp(const_cast<char *>((target + "=").c_str()));
-    c.Cac();
+    if(!c.Cac())
+        return "";
     return to_string(c.getAns());
 }
 

@@ -32,7 +32,7 @@ public:
     void show_value(string &line);
     void assign_value(string &line);
     void create_function(string &line);
-
+    bool check(string line);
 };
 
 #endif //EXPCALC_CALCULATOR_H
