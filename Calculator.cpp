@@ -27,7 +27,7 @@ const regex VARIABLE("[a-zA-Z]+");
 
 bool Calculator::check(string line) {
     if (count(line.begin(), line.end(), '(') != count(line.begin(), line.end(), ')')) {
-        cout << "括号数量不匹配\n";
+        cout << "\033[31mERROR: PARENTHESIS DON'T MATCH\n\033[0m";
         return false;
     }
 
@@ -55,7 +55,7 @@ void Calculator::doSth() {
             show_value(line);
             break;
         default:
-            cout << "未知表达式\n";
+            cout << "\033[31mERROR: UNKNOWN EXPRESSION\n\033[0m";
             break;
     }
 }
@@ -87,7 +87,7 @@ void Calculator::create_variable(string &s) {
     is >> name >> val;
     for (auto i : vars)
         if (i->getVarName() == name) {
-            cout << "Existed" << endl;
+            cout << "\033[31mERROR: VARIABLE " + i->getVarName() + " EXISTED\n\033[0m";
             return;
         }
 
@@ -121,12 +121,24 @@ void Calculator::show_value(string &line) {
                 break;
             }
         if (!tem) {
-            cout << "There is no variable called " << token[0] << endl;
+            cout << "\033[31mERROR: VARIABLE " + token[0] + " DOESN'T EXIST\n\033[0m";
+            // cout << "There is no variable called " << token[0] << endl;
             return;
         } else {
-            string ans = tem->eval();
+            string ans;
+            try
+            {
+                ans = tem->eval();
+            }
+            catch(string msg)
+            {
+                cout<<"\033[31m" + msg + "\n\033[0m";
+                return;
+            }
+            
+            
             if (ans.empty())
-                cout << "表达式有误\n";
+                cout << "\033[31mERROR: WRONG EXPRESSION\n\033[0m";
             else
                 cout << ans << endl;
         }
@@ -138,13 +150,17 @@ void Calculator::show_value(string &line) {
         if (token[i].empty())
             break;
         if (!regex_match(token[i], DIGIT)) {
-            if (token[i + 1] == "(") {
+            if (token[i + 1] == "(" && regex_match(token[i], VARIABLE)) {
                 Func *f = nullptr;
                 for (auto func : funcs)
                     if (token[i] == func->name) {
                         f = func;
                         break;
                     }
+                if(!f) {
+                    cout<<"\033[31mERROR: FUNCTION " + token[i] + " DOESN'T EXIST\n\033[0m";
+                    return;
+                }
                 i++;
                 int left = 1, right = 0;
                 string args;
@@ -155,7 +171,12 @@ void Calculator::show_value(string &line) {
                     args += token[i + 1];
                     i++;
                 }
-                target += f->eval(args);
+                try{
+                    target += f->eval(args);
+                } catch(string msg) {
+                    cout<<"\033[31m" + msg + "\n\033[0m";
+                    return;
+                }
                 i++;
             } else {
                 if (regex_match(token[i], VARIABLE)) {
@@ -165,7 +186,16 @@ void Calculator::show_value(string &line) {
                             var = v;
                             break;
                         }
-                    target += var->eval();
+                    if(!var) {
+                        cout<<"\033[31mERROR: VARIABLE " + token[i] + " DOESN'T EXIST\n\033[0m";
+                        return;
+                    }
+                    try{
+                        target += var->eval();
+                    } catch(string msg) {
+                        cout<<"\033[31m" + msg + "\n\033[0m";
+                        return;
+                    }
                 } else
                     target += token[i];
             }
@@ -174,8 +204,10 @@ void Calculator::show_value(string &line) {
     }
     Calc c;
     c.setExp(const_cast<char *>((target + "=").c_str()));
-    if (!c.Cac()) {
-        cout << "表达式错误\n";
+    try {
+        c.Cac();
+    } catch(string msg) {
+        cout<<"\033[31m" + msg + "\n\033[0m";
         return;
     }
     cout << c.getAns() << endl;
@@ -192,7 +224,8 @@ void Calculator::assign_value(string &line) {
             break;
         }
     if (!variable) {
-        cout << "NO SUCH VARIABLE" << endl;
+        string _varname = m[1];
+        cout << "\033[31mERROR: VARIABLE " + _varname + " DOESN'T EXIST\n\033[0m";
         return;
     }
     variable->setVal(m[2]);
@@ -217,7 +250,7 @@ void Calculator::create_function(string &line) {
             break;
         }
     if (f) {
-        cout << "EXIST\n";
+        cout << "\033[31mERROR: FUNCTION " + name + " EXISTED\n\033[0m";
         return;
     }
     f = new Func();

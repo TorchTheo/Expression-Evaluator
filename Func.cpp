@@ -112,7 +112,11 @@ string Func::eval(string args) {
     for(int i = 0; i < argus.size(); i++) {
         if(argus[i] == ",") {
             c.setExp(const_cast<char *>((arg + "=").c_str()));
-            c.Cac();
+            try{
+                c.Cac(); 
+            } catch(string msg) {
+                throw msg;
+            }
             arguments[index++] = to_string(c.getAns());
             arg = "";
             continue;
@@ -121,7 +125,11 @@ string Func::eval(string args) {
             break;
         if(argus[i].empty()) {
             c.setExp(const_cast<char *>((arg + "=").c_str()));
-            c.Cac();
+            try{
+                c.Cac(); 
+            } catch(string msg) {
+                throw msg;
+            }
             arguments[index++] = to_string(c.getAns());
             arg = "";
             break;
@@ -134,6 +142,8 @@ string Func::eval(string args) {
                         f = func;
                         break;
                     }
+                if(!f)
+                    throw string("ERROR: FUNCTION " + argus[i] + " DOESN'T EXIST");
                 i++;
                 int left = 1, right = 0;
                 string _args;
@@ -145,7 +155,11 @@ string Func::eval(string args) {
                     _args += argus[i + 1];
                     i++;
                 }
-                arg += f->eval(_args);
+                try {
+                    arg += f->eval(_args);
+                } catch(string msg) {
+                    throw msg;
+                }
                 i++;
             }
             else {
@@ -156,7 +170,13 @@ string Func::eval(string args) {
                             var = v;
                             break;
                         }
-                    arg += var->eval();
+                    if(!var)
+                        throw string("ERROR: VARIABLE " + argus[i] + " DOESN'T EXIST");
+                    try {
+                        arg += var->eval();
+                    } catch(string msg) {
+                        throw msg;
+                    }
                 }
                 else
                     arg += argus[i];
@@ -186,6 +206,8 @@ string Func::eval(string args) {
                     f = func;
                     break;
                 }
+            if(!f)
+                throw string("ERROR: FUNCTION " + tokens[i] + " DOESN'T EXIST");
             i++;
             string _args;
             int left = 1, right = 0;
@@ -202,7 +224,11 @@ string Func::eval(string args) {
                 i++;
             }
             i++;
-            target += f->eval(_args);
+            try{
+                target += f->eval(_args);
+            } catch(string msg) {
+                throw msg;
+            }
         }
         else if(regex_match(tokens[i], regex("[a-zA-Z]+")) && tokens[i + 1] != "(") {
             if(trans.find(tokens[i]) == trans.end()) {
@@ -212,7 +238,13 @@ string Func::eval(string args) {
                         variable = var;
                         break;
                     }
-                target += variable->eval();
+                if(!variable)
+                    throw string("ERROR: VARIABLE " + tokens[i] + " DOESN'T EXIST");
+                try{
+                    target += variable->eval();
+                } catch(string msg) {
+                    throw msg;
+                }
             }
             else
                 target += arguments[trans[tokens[i]]];
@@ -223,8 +255,11 @@ string Func::eval(string args) {
     for (int i = 0; i < arguments_size; i++)
         arguments[i] = "";
     c.setExp(const_cast<char *>((target + "=").c_str()));
-    if(!c.Cac())
-        return "";
+    try {
+        c.Cac();
+    } catch(string msg) {
+        throw msg;
+    }
     return to_string(c.getAns());
 }
 

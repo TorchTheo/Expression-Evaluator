@@ -113,8 +113,7 @@ bool Calc::CrectB(const char *str)
         }
         else
         if(s.empty()){
-            printf("在%d位置出现多余右括号\n",i);
-            return 0;
+            throw string("ERROR: UNEXPECTED RIGHT PARENTHESIS AT POSITION " + i);
         }
         else{
             NextB[s.top()]=i;
@@ -122,8 +121,7 @@ bool Calc::CrectB(const char *str)
         }
     }
     if(!s.empty()){
-        printf("在%d位置出现多余左括号\n",s.top());
-        return 0;
+        throw string("ERROR: UNEXPECTED LEFT PARENTHESIS AT POSITION " + s.top());
     }
     return 1;
 }
@@ -132,32 +130,28 @@ bool Calc::CheckError(const char *str,int len){
     for(int i=0;i<len;i++){
         if(*(str+i)=='('){
             if(i<len-1 && Operat(str[i+1]) && str[i+1]!='-'){
-                printf("在%d位置缺少运算符\n",i+1);
-                return 0;
+                throw string("ERROR: LOST OPERATOR AT POSITION " + (i + 1));
             }
             if(i>0 && (Is_Num(str[i-1]) || str[i-1]==')')){
-                printf("在%d位置缺少运算符\n",i);
-                return 0;
+                throw string("ERROR: LOST OPERATOR AT POSITION " + i);
             }
         }
         else
         if(*(str+i)==')'){
             if(i>0 && (Operat(str[i-1]) || str[i-1]=='(')){
                 if(Operat(str[i-1]))
-                    printf("在%d位置缺少运算符\n",i);
+                    throw string("ERROR: LOST OPERATOR AT POSITION " + i);
                 else
-                    printf("在%d位置缺少数字\n",i);
+                    throw string("ERROR: LOST DIGIT AT POSITION " + i);
                 return 0;
             }
             if(i<len-1 && Is_Num(str[i+1])){
-                printf("在%d位置缺少运算符\n",i+1);
-                return 0;
+                throw string("ERROR: LOST OPERATOR AT POSITION " + (i + 1));
             }
         }
         else
         if(i>0 && Operat(*(str+i)) && Operat(str[i-1])){
-            printf("在%d位置缺少数字\n",i);
-            return 0;
+            throw string("ERROR: LOST DIGIT AT POSITION " + i);
         }
     }
     return 1;
@@ -165,17 +159,20 @@ bool Calc::CheckError(const char *str,int len){
 
 bool Calc::Check(char *str,int & len){
     if(len<(1<<1)){
-        puts("表达式长度异常");
-        return 0;
+        throw string("ERROR: WRONG EXPRESSION LENGTH");
     }
     if(str[len-1]!='=' || Operat(str[len-2])){
         puts("表达式结尾错误");
         return 0;
     }
     str[--len]=0;
-    if(!CheckCh(str,0) || !CrectB(str) || !CheckError(str,len))
-        return 0;
-    return 1;
+    try {
+        if(!CheckCh(str,0) || !CrectB(str) || !CheckError(str,len))
+            return 0;
+        return 1;
+    } catch(string msg) {
+        throw msg;
+    }
 }
 bool Calc::Equal(double a,double b){
     if(fabs(a-b)<eps)
@@ -202,8 +199,7 @@ double Calc::GetV(const char *str,int st,int ed){
         if(Is_Num(*(str+i)) || *(str+i)=='.')
             if(*(str+i)=='.')
                 if(Num.point==1){
-                    printf("在%d位置出现多余小数点\n",i);
-                    return ERRORX;
+                    throw string("ERROR: UNEXPECTED DOT");
                 }
                 else
                     Num.point=1;
@@ -287,8 +283,7 @@ double Calc::GetV(const char *str,int st,int ed){
             {
                 if(Equal(b,0.0))
                 {
-                    puts("错误:除数出现0!");
-                    return ERRORX;
+                    throw string("ERROR: DEVIDE ZERO");
                 }
                 S.push(a/b);
             }
@@ -299,13 +294,17 @@ double Calc::GetV(const char *str,int st,int ed){
 }
 
 bool Calc::Cac(){
-    DelandLower(Exp);
-    int len=strlen(Exp);
-    if(!Check(Exp,len)) return 0;
-    Ans=GetV(Exp,0,len);
-    if(Equal(Ans,ERRORX))
-        return 0;
-    return 1;
+    try {
+        DelandLower(Exp);
+        int len=strlen(Exp);
+        if(!Check(Exp,len)) return 0;
+        Ans=GetV(Exp,0,len);
+        if(Equal(Ans,ERRORX))
+            return 0;
+        return 1;
+    } catch(string msg) {
+        throw msg;
+    }
 }
 
 const char *Calc::getExp() const {

@@ -37,8 +37,15 @@ string Variable::eval() {
     Calc c;
     if(isConst) {
         c.setExp(const_cast<char *>((val + "=").c_str()));
-        if(!c.Cac())
-            return "";
+        try
+        {
+            c.Cac();
+        }
+        catch(string msg)
+        {
+            throw msg;
+        }
+        
         return to_string(c.getAns());
     }
     string temp = val;
@@ -59,12 +66,16 @@ string Variable::eval() {
                 break;
             }
         if (!tem) {
-            cout << "There is no variable called " << token[0] << endl;
-            return "";
+            throw string("ERROR: VARIABLE " + token[0] + " DOESN'T EXIST");
         } else {
-            string ans = tem->eval();
+            string ans;
+            try {
+                ans = tem->eval();
+            } catch(string msg) {
+                throw msg;
+            }
             if (ans.empty())
-                cout << "表达式有误\n";
+                throw string("ERROR: WRONG EXPRESSION");
             else
                 cout << ans << endl;
         }
@@ -76,13 +87,15 @@ string Variable::eval() {
         if(token[i].empty())
             break;
         if(!regex_match(token[i], DIGIT)) {
-            if(token[i + 1] == "(") {
+            if(token[i + 1] == "(" && regex_match(token[i], VARIABLE)) {
                 Func *f = nullptr;
                 for(auto func : Calculator::funcs)
                     if(token[i] == func->name) {
                         f = func;
                         break;
                     }
+                if(!f) 
+                    throw string("ERROR: FUNCTION " + token[i] + " DOESN'T EXIST");
                 i++;
                 int left = 1, right = 0;
                 string args;
@@ -94,7 +107,11 @@ string Variable::eval() {
                     args += token[i + 1];
                     i++;
                 }
-                target += f->eval(args);
+                try {
+                    target += f->eval(args);
+                } catch(string msg) {
+                    throw msg;
+                }
                 i++;
             }
             else {
@@ -105,7 +122,13 @@ string Variable::eval() {
                             var = v;
                             break;
                         }
-                    target += var->eval();
+                    if(!var)
+                        throw string("ERROR: VARIABLE " + token[i] + " DOESN'T EXIST");
+                    try{
+                        target += var->eval();
+                    } catch(string msg) {
+                        throw msg;
+                    }
                 }
                 else
                     target += token[i];
@@ -115,8 +138,11 @@ string Variable::eval() {
             target += token[i];
     }
     c.setExp(const_cast<char *>((target + "=").c_str()));
-    if(!c.Cac())
-        return "";
+    try {
+        c.Cac();
+    } catch(string msg) {
+        throw msg;
+    }
     return to_string(c.getAns());
 }
 
