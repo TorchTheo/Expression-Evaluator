@@ -13,6 +13,10 @@
  *
  * Func h(x,y,z,w) = g(y,z,w) * x
  * h(4,2,3,4)
+ *
+ * Func f(x, y) = x + y
+ * Func g(x) = x + 1
+ *
  * */
 
 #include "Func.h"
@@ -28,7 +32,7 @@ vector<pair<regex, string>> replace_list{
         make_pair(regex("\\*"), " * "),
 //        make_pair(regex("%"), " % "),
         make_pair(regex("/"), " / "),
-        make_pair(regex(","), " "),
+        make_pair(regex(","), " , "),
 //        make_pair(regex("="), " = "),
 };
 //string expr_with_end(queue<string> &tokens,string &end,int rank);
@@ -91,18 +95,82 @@ vector<pair<regex, string>> replace_list{
 //    }else throw unexpected_token;
 //}
 
-string Func::eval() {
+const regex DIGIT("[0-9|.]+");
+const regex VARIABLE("[a-zA-Z]+");
+
+string Func::eval(string args) {
+    Calc c;
+    for(auto i : replace_list) args = regex_replace(args, i.first, i.second);
+    istringstream iss(args);
+    string t;
+    vector<string> argus;
+    while(iss>>t)
+        argus.push_back(t);
+    argus.push_back("");
+    int index = 0;
+    string arg;
+    for(int i = 0; i < argus.size(); i++) {
+        if(argus[i] == ",") {
+            c.setExp(const_cast<char *>((arg + "=").c_str()));
+            c.Cac();
+            arguments[index++] = to_string(c.getAns());
+            arg = "";
+            continue;
+        }
+        if(index == arguments_size)
+            break;
+        if(argus[i].empty()) {
+            c.setExp(const_cast<char *>((arg + "=").c_str()));
+            c.Cac();
+            arguments[index++] = to_string(c.getAns());
+            arg = "";
+            break;
+        }
+        if(regex_match(argus[i], VARIABLE)) {
+            if(argus[i + 1] == "(") {
+                Func *f = nullptr;
+                for(auto func : Calculator::funcs)
+                    if(argus[i] == func->name) {
+                        f = func;
+                        break;
+                    }
+                i++;
+                int left = 1, right = 0;
+                string _args;
+                while(left != right) {
+                    if(argus[i + 1] == "(") left++;
+                    else if(argus[i + 1] == ")") right++;
+                    if(left == right)
+                        break;
+                    _args += argus[i + 1];
+                    i++;
+                }
+                arg += f->eval(_args);
+                i++;
+            }
+            else {
+                if(regex_match(argus[i], VARIABLE)) {
+                    Variable * var;
+                    for(auto v : Calculator::vars)
+                        if(v->getVarName() == argus[i]) {
+                            var = v;
+                            break;
+                        }
+                    arg += var->eval();
+                }
+                else
+                    arg += argus[i];
+            }
+        } else
+            arg += argus[i];
+    }
     string temp = body;
-//    for(int i = 0; i < temp.size(); i++)
-//        if(temp[i] == ',')
-//            temp[i] = ' ';
     string target;
 //    for(const auto& i : replace_list) temp = regex_replace(temp, i.first, i.second);
     for(int i = 0; i< replace_list.size(); i++)
         temp = regex_replace(temp, replace_list[i].first, replace_list[i].second);
     istringstream is(temp);
     vector<string> tokens;
-    string t;
     while (is >> t)
         tokens.push_back(t);
     tokens.push_back("");
@@ -118,26 +186,23 @@ string Func::eval() {
                     f = func;
                     break;
                 }
-            for(int j = i + 2; j < i + 2 + f->arguments_size; j++) {
-                if(regex_match(tokens[j], regex("[0-9|.]+")) && count(tokens[i].begin(), tokens[i].end(), '.'))
-                    f->arguments[j - i - 2] = tokens[j];
-                else {
-                    if(trans.find(tokens[j]) == trans.end()) {
-                        Variable *variable = nullptr;
-                        for(auto var : Calculator::vars)
-                            if(var->getVarName() == tokens[j]) {
-                                variable = var;
-                                break;
-                            }
-                        f->arguments[j - i - 2] = variable->eval();
-                    }
-                    else
-                        f->arguments[j - i - 2] = arguments[trans[tokens[j]]];
+            i++;
+            string _args;
+            int left = 1, right = 0;
+            while(left != right) {
+                if(tokens[i + 1] == "(") left++;
+                else if(tokens[i + 1] == ")") right++;
+                if(left == right) break;
+                if(trans.find(tokens[i + 1]) != trans.end()) {
+                    _args += arguments[trans[tokens[i + 1]]];
+                    i++;
+                    continue;
                 }
+                _args += tokens[i + 1];
+                i++;
             }
-
-            i += f->arguments_size + 2;
-            target += f->eval();
+            i++;
+            target += f->eval(_args);
         }
         else if(regex_match(tokens[i], regex("[a-zA-Z]+")) && tokens[i + 1] != "(") {
             if(trans.find(tokens[i]) == trans.end()) {
@@ -157,7 +222,6 @@ string Func::eval() {
 
     for (int i = 0; i < arguments_size; i++)
         arguments[i] = "";
-    Calc c;
     c.setExp(const_cast<char *>((target + "=").c_str()));
     if(!c.Cac())
         return "";

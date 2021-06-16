@@ -13,7 +13,7 @@
 using namespace std;
 class Func {
 public:
-    string eval();
+    string eval(string args);
     map<string, int> trans;
     map<int, string> arguments;
     string body;
